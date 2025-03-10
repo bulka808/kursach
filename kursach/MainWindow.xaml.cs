@@ -10,29 +10,27 @@ namespace kursach;
 public partial class MainWindow : Window
 {
     const string CONNECTION_STRING = "data source=user_data.db";
-
-
     public ObservableCollection<Budget> Budgets { get; set; } = new ObservableCollection<Budget>();
 
 
     public enum Category
     {
-        // убрать лишние =
-        Food = 0,          // Продукты питания и напитки
-        Housing = 1,       // Жилье (аренда, ипотека, коммунальные услуги)
-        Utilities = 2,     // Коммунальные услуги (электричество, вода, газ, интернет, телефон)
-        Transportation = 3,// Транспорт (бензин, общественный транспорт, ремонт авто)
-        Health = 4,        // Здоровье (медицинские услуги, лекарства, страхование)
-        Education = 5,     // Образование (книги, курсы, обучение)
-        Clothing = 6,      // Одежда и обувь
-        Entertainment = 7, // Развлечения (кино, концерты, хобби)
-        PersonalCare = 8,  // Уход за собой (косметика, парикмахерские услуги)
-        Gifts = 9,         // Подарки и поздравления
-        Insurance = 10,    // Страхование (жизни, имущества)
-        Investments = 11,  // Инвестиции
-        Savings = 12,      // Накопления
-        Others = 13 // Прочие расходы
+        Food = 0,       // Продукты питания и напитки
+        Housing,        // Жилье (аренда, ипотека, коммунальные услуги)
+        Utilities,      // Коммунальные услуги (электричество, вода, газ, интернет, телефон)
+        Transportation, // Транспорт (бензин, общественный транспорт, ремонт авто)
+        Health,         // Здоровье (медицинские услуги, лекарства, страхование)
+        Education,      // Образование (книги, курсы, обучение)
+        Clothing,       // Одежда и обувь
+        Entertainment,  // Развлечения (кино, концерты, хобби)
+        PersonalCare,   // Уход за собой (косметика, парикмахерские услуги)
+        Gifts,          // Подарки и поздравления
+        Insurance,      // Страхование (жизни, имущества)
+        Investments,    // Инвестиции
+        Savings,        // Накопления
+        Others          // Прочие расходы
     }
+
     public MainWindow()
     {
         InitializeComponent();
@@ -43,6 +41,7 @@ public partial class MainWindow : Window
 #endif
         #endregion
         this.DataContext = this;
+        t_cat_cmbbx.ItemsSource = Enum.GetValues(typeof(Category));
     }
 
 
@@ -116,7 +115,7 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex) // обработка ошибок
                 {
-                    MessageBox.Show( $"что-то пошло не так...\n{ex.Message}", "", MessageBoxButton.OK);
+                    MessageBox.Show($"что-то пошло не так...\n{ex.Message}", "", MessageBoxButton.OK);
                 }
             }
         }
@@ -128,9 +127,9 @@ public partial class MainWindow : Window
         int id { get; set; } //id для бд
         int b_id { get; set; } // для принадлежности к бюджету
         public double sum { get; set; } // сумма, которая добавилась/убавилась 
-        string? info { get; set; } // описание
-        DateTime date { get; set; } // дата
-        Category cat { get; set; } // категория трат
+        public string? info { get; set; } // описание
+        public DateTime date { get; set; } // дата
+        public Category cat { get; set; } // категория трат
         public Transaction(int id, int b_id, double sum, string? info, DateTime date, Category cat)
         {
             this.id = id;
@@ -204,7 +203,7 @@ public partial class MainWindow : Window
             using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
             {
                 connection.Open();
-                SqliteTransaction transaction = connection.BeginTransaction();
+
                 try
                 {
                     using (SqliteCommand command = new SqliteCommand(query, connection))
@@ -215,30 +214,76 @@ public partial class MainWindow : Window
                         command.Parameters.AddWithValue("@cat", (int)cat);
                         command.Parameters.AddWithValue("@info", info);
 
-                        int id = (int)command.ExecuteScalar();
+                        int id = Convert.ToInt32( command.ExecuteScalar());
 
                         transactions.Add(new Transaction(id, b_id, sum, info, date, cat));
                     }
+                    this.update_sum();
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    MessageBox.Show("", $"что-то пошло не так...\n{ex.Message}", MessageBoxButton.OK);
+                    MessageBox.Show($"что-то пошло не так...\n{ex.Message}", "", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
-            this.update_sum();
+            
         }
     }
 
     private void budgets_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-    {//очишение списка транзакций и вставка вместо него нужного
+    {
+        // вставка нужной информации о выбранном бюджете
+        if (((Budget)budgets_lb.SelectedItem).name == "main")
+        {
+            budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}";
+        }
+        else
+        {
+            budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}\nвыделенный бюджет: {((Budget)budgets_lb.SelectedItem).budgetAmount}";
+        }
+        //очишение списка транзакций и вставка вместо него нужного
         transactions_lb.Items.Clear();
         if (((Budget)budgets_lb.SelectedItem).transactions.Count() > 0)
         {
             transactions_lb.ItemsSource = ((Budget)budgets_lb.SelectedItem).transactions;
         }
-        else {
-            transactions_lb.Items.Add("нет транзакций");
+        else { transactions_lb.Items.Add("нет транзакций"); }
+    }
+
+    private void transactions_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {// обновление информации о выбранной транзакции
+        transaction_info_tb.Text =
+            $"сумма: {((Transaction)transactions_lb.SelectedItem).sum}\n" +
+            $"бюджет: {((Budget)budgets_lb.SelectedItem).name} \n" +
+            $"категория: {((Transaction)transactions_lb.SelectedItem).cat.ToString()}\n" +
+            $"дата: {((Transaction)transactions_lb.SelectedItem).date}\n" +
+            $"описание: {((Transaction)transactions_lb.SelectedItem).info} \n";
+
+    }
+
+    private void add_t_btn_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            DateTime date = DateTime.Now; ;
+            double sum = double.Parse(t_sum_tb.Text);
+            Category cat = (Category)t_cat_cmbbx.SelectedItem;
+            if (!(bool)t_check_date_now.IsChecked)
+            {
+                date = DateTime.Parse(t_date_picker.Text);
+            }
+            string? info = t_info_tb.Text;
+
+            ((Budget)b_picker_cmbbx.SelectedItem).AddTransaction(sum, date, cat, info);
+            t_sum_tb.Text = "";
+            b_picker_cmbbx.SelectedIndex = -1;
+            t_cat_cmbbx.SelectedIndex = -1; 
+            t_check_date_now.IsChecked = false; 
+            t_date_picker.Text = ""; 
+            t_info_tb.Text = "";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("", "Некорректный ввод", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }
