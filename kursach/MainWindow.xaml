@@ -123,7 +123,7 @@
                         <TextBox x:Name="b_name_tb" Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
 
                         <TextBlock Text="выделенный бюджет: " FontSize="14" Margin="3"/>
-                        <TextBox x:Name="allwedB_txtb"  Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
+                        <TextBox x:Name="amountB_txtb"  Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
 
                         <Button x:Name="add_b_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1" Click="add_b_btn_Click"/>
                     </StackPanel>

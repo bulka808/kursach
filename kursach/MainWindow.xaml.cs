@@ -116,11 +116,33 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex) // обработка ошибок
                 {
-                    MessageBox.Show($"что-то пошло не так...\n{ex.Message}", "", MessageBoxButton.OK);
+                    MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
                 }
             }
         }
     }
+    //метод для добавления бюджета
+    void AddBudget(string name, double sum) {
+        string query = @"INSERT INTO budgets (name, sum, budgetAmount) VALUES (@name, @sum, @budgetAmount) RETURNING b_id";
+        int b_id;
+        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING)) {
+            connection.Open();
+            try
+            {
+                using (SqliteCommand command = new SqliteCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@name", name);
+                    command.Parameters.AddWithValue("@sum", sum);
+                    command.Parameters.AddWithValue("@budgetAmount", sum);
+                    b_id = Convert.ToInt32(command.ExecuteScalar());
+                }
+                Budgets.Add(new Budget(b_id, name, sum, sum));
+            }
+            catch (Exception ex) { MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK); }
+        }
+    }
+
+
 
     public class Transaction
     {
@@ -223,7 +245,7 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"что-то пошло не так...\n{ex.Message}", "", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
                 }
             }
             
@@ -234,7 +256,7 @@ public partial class MainWindow : Window
 
     private void budgets_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        show_budgets_info();
+        show_budgets_info(); //метод выводящий информацию о выбранном бюджете
     }
 
     private void transactions_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -249,7 +271,7 @@ public partial class MainWindow : Window
     }
 
     private void add_t_btn_Click(object sender, RoutedEventArgs e)
-    {
+    {//добавление транзакции
         try
         {
             DateTime date = DateTime.Now; ;
@@ -275,9 +297,25 @@ public partial class MainWindow : Window
             MessageBox.Show($"{ex}", "Некорректный ввод", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
-    private void add_b_btn_Click(object sender, RoutedEventArgs e)
-    {
 
+    private void add_b_btn_Click(object sender, RoutedEventArgs e)
+    {// добавление бюджета после нажатия на кнопку
+        try
+        {
+            if (b_name_tb.Text != "" && amountB_txtb.Text != "" && double.Parse(amountB_txtb.Text) >= 0)
+            {
+                string name = b_name_tb.Text;
+                double amountBudget = double.Parse(amountB_txtb.Text);
+
+
+                AddBudget(name, amountBudget);
+
+                b_name_tb.Text = "";
+                amountB_txtb.Text = "";
+            }
+
+        }
+        catch (Exception ex) { MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK); }
     }
 
 
@@ -307,7 +345,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"{ex}");
+            MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
         }
         
     }
