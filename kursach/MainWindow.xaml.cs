@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     const string CONNECTION_STRING = "data source=user_data.db";
     public ObservableCollection<Budget> Budgets { get; set; } = new ObservableCollection<Budget>();
 
+   
 
     public enum Category
     {
@@ -229,24 +230,11 @@ public partial class MainWindow : Window
         }
     }
 
+
+
     private void budgets_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        // вставка нужной информации о выбранном бюджете
-        if (((Budget)budgets_lb.SelectedItem).name == "main")
-        {
-            budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}";
-        }
-        else
-        {
-            budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}\nвыделенный бюджет: {((Budget)budgets_lb.SelectedItem).budgetAmount}";
-        }
-        //очишение списка транзакций и вставка вместо него нужного
-        transactions_lb.Items.Clear();
-        if (((Budget)budgets_lb.SelectedItem).transactions.Count() > 0)
-        {
-            transactions_lb.ItemsSource = ((Budget)budgets_lb.SelectedItem).transactions;
-        }
-        else { transactions_lb.Items.Add("нет транзакций"); }
+        show_budgets_info();
     }
 
     private void transactions_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -280,10 +268,49 @@ public partial class MainWindow : Window
             t_check_date_now.IsChecked = false; 
             t_date_picker.Text = ""; 
             t_info_tb.Text = "";
+            show_budgets_info();
         }
         catch (Exception ex)
         {
-            MessageBox.Show("", "Некорректный ввод", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show($"{ex}", "Некорректный ввод", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
+    private void add_b_btn_Click(object sender, RoutedEventArgs e)
+    {
+
+    }
+
+
+
+    void show_budgets_info()
+    {
+        try
+        {
+            // вставка нужной информации о выбранном бюджете
+            if (budgets_lb.SelectedItem != null)
+            {
+                if (((Budget)budgets_lb.SelectedItem).name == "main")
+                {
+                    budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}";
+                }
+                else
+                {
+                    budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}\nвыделенный бюджет: {((Budget)budgets_lb.SelectedItem).budgetAmount}";
+                }
+                //очишение списка транзакций и вставка вместо него нужного
+                if (((Budget)budgets_lb.SelectedItem).transactions.Count() > 0)
+                {
+                    transactions_lb.ItemsSource = ((Budget)budgets_lb.SelectedItem).transactions;
+                }
+                else { transactions_lb.Items.Add("нет транзакций"); }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"{ex}");
+        }
+        
+    }
+
+
 }

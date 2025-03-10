@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:kursach"
         mc:Ignorable="d"
-        Title="???" Height="500" Width="900">
+        Title="???" Height="550" Width="900">
     <Grid>
         <Grid.Background>
             <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.WindowFrameColorKey}}"/>
@@ -125,7 +125,7 @@
                         <TextBlock Text="выделенный бюджет: " FontSize="14" Margin="3"/>
                         <TextBox x:Name="allwedB_txtb"  Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
 
-                        <Button x:Name="add_b_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1"/>
+                        <Button x:Name="add_b_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1" Click="add_b_btn_Click"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
