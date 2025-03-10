@@ -121,7 +121,7 @@ public partial class MainWindow : Window
             }
         }
     }
-
+    //aaa
     public class Transaction
     {
         //класс "транзакция", отражает изменение баланса
