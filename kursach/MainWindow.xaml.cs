@@ -1,9 +1,8 @@
 ﻿//sqlite как бд
 using Microsoft.Data.Sqlite;
-
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.IO;
+using System.Windows;
 namespace kursach;
 
 /// <summary>
@@ -148,13 +147,59 @@ public partial class MainWindow : Window
         }
     }
 
+    private void bd_remove_t(Transaction t)
+    {// удаление транзакции из бд
+        string query = @"DELETE FROM transactions WHERE id = @id";
+        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
+        {
+            connection.Open();
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    SqliteCommand command = new SqliteCommand(query, connection, transaction);
+                    command.Parameters.AddWithValue("@id", t.id);
+                    command.ExecuteNonQuery();
 
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK); transaction.Rollback();
+                }
+            }
+        }
+    }
+    private void bd_remove_b(Budget b)
+    {
+        string query = @"DELETE FROM budgets WHERE b_id = @b_id";
+        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
+        {
+            connection.Open();
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    SqliteCommand command = new SqliteCommand(query, connection, transaction);
+                    command.Parameters.AddWithValue("@b_id", b.b_id);
+                    command.ExecuteNonQuery();
+
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK); transaction.Rollback();
+                }
+            }
+        }
+
+    }
 
     public class Transaction
     {
         //класс "транзакция", отражает изменение баланса
-        int id { get; set; } //id для бд
-        int b_id { get; set; } // для принадлежности к бюджету
+        public int id { get; set; } //id для бд
+        public int b_id { get; set; } // для принадлежности к бюджету
         public double sum { get; set; } // сумма, которая добавилась/убавилась 
         public string? info { get; set; } // описание
         public DateTime date { get; set; } // дата
@@ -171,7 +216,7 @@ public partial class MainWindow : Window
     }
     public class Budget
     {
-        int b_id { get; set; } // id для бд
+        public int b_id { get; set; } // id для бд
         public string name { get; set; } // имя бюджета
         public double sum { get; set; } // текущее кол-во денег
         public double budgetAmount { get; set; } // максимально сколько можно потратить, думаю просто выделять с основного баланса некоторое кол-во денег и просто чтобы был виден остаток и сколько было выделено
@@ -198,10 +243,11 @@ public partial class MainWindow : Window
 
                 }
             }
-            else { foreach (var t in transactions) {  this.sum += t.sum; } } 
+            else { foreach (var t in transactions) { this.sum += t.sum; } }
         }
         public void GetTransactions()
         {//чтение транзакций из бд
+            transactions.Clear();
             string query;
             if (this.name == "main") { query = "SELECT id, b_id, sum, info, date, cat FROM transactions"; } // если название main то читаем все, main будет хранить всё
             else { query = "SELECT id, b_id, sum, info, date, cat FROM transactions WHERE b_id = @b_id"; }
@@ -278,12 +324,15 @@ public partial class MainWindow : Window
         {
             if (transactions_lb.SelectedItem != null)
             {
+                string name = "none";
+
+                foreach (var b in Budgets) { if (b.b_id == ((Transaction)transactions_lb.SelectedItem).b_id) { name = b.name; } }
                 transaction_info_tb.Text =
-                    $"сумма: {((Transaction)transactions_lb.SelectedItem).sum}\n" +
-                    $"бюджет: {((Budget)budgets_lb.SelectedItem).name} \n" +
-                    $"категория: {((Transaction)transactions_lb.SelectedItem).cat.ToString()}\n" +
-                    $"дата: {((Transaction)transactions_lb.SelectedItem).date}\n" +
-                    $"описание: {((Transaction)transactions_lb.SelectedItem).info} \n";
+                    $"Сумма: {((Transaction)transactions_lb.SelectedItem).sum}\n" +
+                    $"Бюджет: {name} \n" +
+                    $"Категория: {((Transaction)transactions_lb.SelectedItem).cat.ToString()}\n" +
+                    $"Дата: {((Transaction)transactions_lb.SelectedItem).date}\n" +
+                    $"Описание: {((Transaction)transactions_lb.SelectedItem).info} \n";
             }
         }
         catch (Exception ex) { transaction_info_tb.Text = "==="; }
@@ -301,7 +350,7 @@ public partial class MainWindow : Window
                 date = DateTime.Parse(t_date_picker.Text);
             }
             string? info = t_info_tb.Text;
-            if (((Budget)b_picker_cmbbx.SelectedItem).sum < sum) { MessageBox.Show("Недостаточно средств, баланс стал отрицательным", "", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            if (((Budget)b_picker_cmbbx.SelectedItem).sum + sum == 0) { MessageBox.Show("Недостаточно средств, баланс стал отрицательным", "", MessageBoxButton.OK, MessageBoxImage.Warning); }
             ((Budget)b_picker_cmbbx.SelectedItem).AddTransaction(sum, date, cat, info);
             get_main_budget(Budgets).transactions.Clear();
             get_main_budget(Budgets).GetTransactions();
@@ -333,7 +382,7 @@ public partial class MainWindow : Window
 
                 if (get_main_budget(Budgets).sum < amountBudget)
                 {
-                    MessageBox.Show("сумма не может быть больше общего баланса", "", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Сумма не может быть больше общего баланса", "", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 else { AddBudget(name, amountBudget); }
                 b_name_tb.Text = "";
@@ -359,15 +408,15 @@ public partial class MainWindow : Window
 
                 if (selectedBudget.name == "main")
                 {
-                    budget_info_tb.Text = $"баланс: {selectedBudget.sum}";
+                    budget_info_tb.Text = $"Баланс: {selectedBudget.sum}";
                 }
                 else
                 {
-                    budget_info_tb.Text = $"баланс: {selectedBudget.sum}\nвыделенный бюджет: {selectedBudget.budgetAmount}";
+                    budget_info_tb.Text = $"Баланс: {selectedBudget.sum}\nВыделенный бюджет: {selectedBudget.budgetAmount}";
                 }
 
                 // Очистка списка транзакций и вставка нужного
-                if (selectedBudget.transactions.Count > 0)
+                if (selectedBudget.transactions.Count != 0)
                 {
                     // Убедитесь, что Items пуст перед присвоением ItemsSource
                     if (transactions_lb.ItemsSource == null) { transactions_lb.Items.Clear(); }
@@ -377,7 +426,8 @@ public partial class MainWindow : Window
                 {
                     // Если транзакций нет, используйте ItemsSource для отображения сообщения
                     transactions_lb.ItemsSource = null; // Сначала очищаем ItemsSource
-                    transactions_lb.Items.Add("нет транзакций");
+                    transactions_lb.Items.Clear();
+                    transactions_lb.Items.Add("Нет транзакций");
                 }
             }
         }
@@ -388,26 +438,18 @@ public partial class MainWindow : Window
 
     }
 
-
-    public Budget get_main_budget(ObservableCollection<Budget> arr)
-    {
-        return arr.First(b => b.name == "main");
-    }
-
-
-
-
-
-    void CreateReport() 
+    private void create_report_Click(object sender, RoutedEventArgs e) { CreateReport(); }// отчет
+    //создание отчета
+    void CreateReport()
     {
         try
         {
             using (StreamWriter sw = new StreamWriter($"{DateTime.Now.ToString("dd/MM/yyyy")}_report.txt"))
             {
-                foreach (var b in Budgets) 
+                foreach (var b in Budgets)
                 {
                     sw.WriteLine($"{b.name}:    ");
-                    foreach (var t in b.transactions) 
+                    foreach (var t in b.transactions)
                     {
                         sw.WriteLine($"{t.sum}  {t.cat.ToString()}  {t.date}    {t.info}");
                     }
@@ -416,17 +458,63 @@ public partial class MainWindow : Window
             }
             MessageBox.Show($"Отчет создан!", "", MessageBoxButton.OK);
         }
-        catch (Exception ex) { MessageBox.Show($"{ex}", "", MessageBoxButton.OK, MessageBoxImage.Warning); }    
-    }
-    void show_info() { MessageBox.Show("Для того чтобы добавить расходы, нужно писать сумму с минусом: \"-100\"", "", MessageBoxButton.OK, MessageBoxImage.Question); }
-
-    private void create_report_Click(object sender, RoutedEventArgs e)
-    {
-        CreateReport();
+        catch (Exception ex) { MessageBox.Show($"{ex}", "", MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 
-    private void info_button_Click(object sender, RoutedEventArgs e)
+    private void del_t_btn_Click(object sender, RoutedEventArgs e)
+    {//удаление транзакции
+        if (transactions_lb.SelectedItem != null && transactions_lb.ItemsSource != null && budgets_lb.SelectedItem != null)
+        {
+            //выбрана транзакция, транзакции есть, выбранная транзакция соответствует выбранному бюджету, бюджет выбран
+            try
+            {
+                var t = (Transaction)transactions_lb.SelectedItem;
+                bd_remove_t(t);//сначала удаляем из бд
+                if (budget_exists(t.b_id))
+                {
+                    Budgets.First(b => b.b_id == t.b_id) .GetTransactions();
+                }// удаляем из бюджета если он есть и обновляем список транзакций
+                get_main_budget(Budgets).GetTransactions();// обновляем транзакции в основном бюджете
+                show_budgets_info();
+            }
+            catch (Exception ex) { MessageBox.Show($"{ex}", "", MessageBoxButton.OK, MessageBoxImage.Warning); }
+
+        }
+        else { MessageBox.Show($"Что-то пошло не так.", "", MessageBoxButton.OK); }
+    }
+    private void del_b_btn_Click(object sender, RoutedEventArgs e)
     {
-        show_info();
+        if (budgets_lb.ItemsSource != null && budgets_lb.SelectedItem != null)
+        {// бюджеты существуют, бюджет выбран
+         //удаляем сначала из бд а потом из коллекции
+
+            var b = (Budget)budgets_lb.SelectedItem;
+            if (b.name != "main")
+            {
+                try
+                {
+                    bd_remove_b(b);
+                    Budgets.Remove((Budget)budgets_lb.SelectedItem);
+                    transactions_lb.ItemsSource = null;
+                    transactions_lb.Items.Clear();
+                }
+                catch (Exception ex) { MessageBox.Show($"{ex}", "", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            }
+            else { MessageBox.Show($"Нельзя удалить основной бюджет.", "", MessageBoxButton.OK); }
+        }
+        else { MessageBox.Show($"Что-то пошло не так.", "", MessageBoxButton.OK); }
+    }
+
+    private void info_button_Click(object sender, RoutedEventArgs e) { show_info(); }//вывод справки
+    void show_info() { MessageBox.Show("Бюджет main хранит все транзакции, которые добавляет пользователь\n\"Транзакция\" - изменение баланса, \"бюджет\" - может хранить транзакции если в него добавить.\nДля того чтобы добавить расходы, нужно писать сумму с минусом: \"-100\"\nПри создании нового бюджета в нем создается транзакция, которая не учитывается в основном бюджете и содержит сумму равную выделенной на этот бюджет, ее можно удалить, если она не нужна.\n", "", MessageBoxButton.OK, MessageBoxImage.Question); }
+    bool budget_exists(int b_id)
+    {
+        foreach (var b in Budgets) { if (b.b_id == b_id) { return true; } }
+        return false;
+    }//проверяет есть ли бюджет
+
+    public Budget get_main_budget(ObservableCollection<Budget> arr)
+    {
+        return arr.First(b => b.name == "main");//возвращает основной бюджет
     }
 }
