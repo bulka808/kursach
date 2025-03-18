@@ -5,43 +5,52 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:kursach"
         mc:Ignorable="d"
-        Title="???" Height="550" Width="900">
-    <Grid>
-        <Grid.Background>
-            <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.WindowFrameColorKey}}"/>
-        </Grid.Background>
+        Title="???" Height="600" Width="840" Background="#FF707070" >
+    <Window.Resources>
+    
+    </Window.Resources>
+
+
+
+    <Grid Background="#FF707070">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="200"/>
             <ColumnDefinition/>
             <ColumnDefinition/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        
+        
+        
         
         <!--2 листбокса, 1 со всеми бюджетами, второй со списком транзакций в бюджете-->
-        
         <!-- бюджеты -->
-        <DockPanel  Grid.Column="0">
-            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top">
+        <DockPanel  Grid.Column="0" Grid.Row="1">
+            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top" Background="#FF707070">
                 <TextBlock Text="Бюджеты:" FontSize="16" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top"/>
             </Border>
             <Border BorderBrush="Black" BorderThickness="3" Margin="1" CornerRadius="3">
-                <ListBox x:Name="budgets_lb" ItemsSource="{Binding Budgets}" Background="DimGray"  Margin="1" FontSize="16" HorizontalContentAlignment="Stretch" SelectionChanged="budgets_lb_SelectionChanged">
+                <ListBox x:Name="budgets_lb" ItemsSource="{Binding Budgets}" Background="#FF707070"  Margin="1" FontSize="16" HorizontalContentAlignment="Stretch" SelectionChanged="budgets_lb_SelectionChanged" BorderBrush="Black">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border BorderBrush="Black" BorderThickness="1" CornerRadius="3" Margin="2">
-                                <TextBlock Text="{Binding name}" HorizontalAlignment="Center"></TextBlock>
+                                <TextBlock Text="{Binding name}" HorizontalAlignment="Center" Background="#FF707070"></TextBlock>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Border>
         </DockPanel>
-        
         <!-- транзакции -->
-        <DockPanel Grid.Column="1">
-            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top">
-                <TextBlock Text="Транзакции:" FontSize="16" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+        <DockPanel Grid.Column="1" Grid.Row="1">
+            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top" Background="#FF707070">
+                <TextBlock Text="Транзакции:" FontSize="16" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top" Background="#FF707070"/>
             </Border>
             <Border BorderBrush="Black" Grid.Column="1" BorderThickness="3" Margin="1" CornerRadius="3">
                 <ListBox x:Name="transactions_lb" Background="DimGray" Margin="1" FontSize="14" SelectionChanged="transactions_lb_SelectionChanged">
@@ -58,77 +67,101 @@
                 </ListBox>
             </Border>
         </DockPanel>
-        
 
-        <!-- поле для информации о транзакции -->
-        <DockPanel Grid.Column="2">
-            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top">
-                <TextBlock Text="информация о транзакции:" FontSize="16" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top"/>
-            </Border>
-            <Border BorderBrush="Black" BorderThickness="3" Margin="1" CornerRadius="3">
-                <TextBlock x:Name="transaction_info_tb"  FontSize="16" Text="===" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3" TextWrapping="WrapWithOverflow"/>
-            </Border>
-        </DockPanel>
 
-        <!-- поле для разной информации о бюджете -->
-        <DockPanel Grid.Column="3" >
-            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top">
-                <TextBlock Text="информация о бюджете:" FontSize="16" Grid.Column="3" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top"/>
-            </Border>
-            <Border Grid.Column="3" BorderBrush="Black" BorderThickness="3" Margin="1" CornerRadius="3">
-                <TextBlock x:Name="budget_info_tb" FontSize="16" Text="===" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3" TextWrapping="WrapWithOverflow"/>
-            </Border>
-        </DockPanel>
+
 
         <!-- добавление бюджета или транзакции-->
-        <!-- <Border Grid.Column="4"  BorderBrush="Black" BorderThickness="3" Margin="1" CornerRadius="3">-->
-            <StackPanel Grid.Column="4" Orientation="Vertical">
-                <!-- транзакция -->
-                <Border BorderBrush="Black" BorderThickness="3" Margin="0,2,2,0" CornerRadius="3">
-                    <StackPanel>
-                        <TextBlock Text="добавить транзакцию: " FontSize="14" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3,2,5,3"/>
+        <Border Grid.Column="2" Grid.ColumnSpan="3" Grid.Row="1" BorderBrush="Black" BorderThickness="3" Margin="0,2,2,0" CornerRadius="3">
+            <TabControl Grid.Column="4" Background="#FF707070">
 
-                        <TextBlock Text="сумма:" FontSize="14" Margin="3"/>
-                        <TextBox x:Name="t_sum_tb" Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"></TextBox>
+                <TabItem BorderBrush="Black" BorderThickness="3" Header="информация" Background="#FF707070" Margin="1" VerticalAlignment="Top" >
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Background="#FF707070">
+                        <!-- поле для информации о транзакции -->
+                        <DockPanel Grid.Column="2">
+                            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top">
+                                <TextBlock Text="Информация о транзакции:" FontSize="16" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                            </Border>
+                            <Border BorderBrush="Black" BorderThickness="3" Margin="1" CornerRadius="3">
+                                <TextBlock x:Name="transaction_info_tb"  FontSize="16" Text="===" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3" TextWrapping="WrapWithOverflow"/>
+                            </Border>
+                        </DockPanel>
 
-                        <TextBlock Text="бюджет:" FontSize="14" Margin="3"/>
-                        <ComboBox x:Name="b_picker_cmbbx" Background="Gray" BorderBrush="Black" BorderThickness="2" ItemsSource="{Binding Budgets}" Margin="2">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding name}"></TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-
-                        <TextBlock Text="категория:" FontSize="14" Margin="3"></TextBlock>
-                        <ComboBox x:Name="t_cat_cmbbx"></ComboBox>
-                        
-                        <TextBlock Text="дата:" FontSize="14" Margin="3"/>
-                        <DatePicker x:Name="t_date_picker" Background="Gray" BorderBrush="Black" BorderThickness="2" Margin="2"/>
-                        <CheckBox x:Name="t_check_date_now" Content="сейчас" FontSize="14" Background="Gray" BorderBrush="Black" BorderThickness="2"/>
-
-                        <TextBlock Text="описание:" FontSize="14" Margin="3"/>
-                        <TextBox x:Name="t_info_tb" FontSize="14" Margin="3"></TextBox>
-
-
-                        <Button x:Name="add_t_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1" Click="add_t_btn_Click"/>
+                        <!-- поле для разной информации о бюджете -->
+                        <DockPanel Grid.Column="3" >
+                            <Border BorderBrush="Black" BorderThickness="3" Margin="2" CornerRadius="3" DockPanel.Dock="Top">
+                                <TextBlock Text="Информация о бюджете:" FontSize="16" Grid.Column="3" TextWrapping="WrapWithOverflow" Margin="3,2,3,5" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                            </Border>
+                            <Border Grid.Column="3" BorderBrush="Black" BorderThickness="3" Margin="1" CornerRadius="3">
+                                <TextBlock x:Name="budget_info_tb" FontSize="16" Text="===" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3" TextWrapping="WrapWithOverflow"/>
+                            </Border>
+                        </DockPanel>
                     </StackPanel>
-                </Border>
-                <!-- бюджет -->
-                <Border BorderBrush="Black" BorderThickness="3" Margin="0,2,2,2" CornerRadius="3">
+                </TabItem>
+
+                <TabItem BorderBrush="Black" BorderThickness="3" Header="Добавить транзакцию или бюджет" Background="#FF707070" >
+                    <!-- транзакция -->
+
                     <StackPanel>
-                        <TextBlock Text="добавить бюджет: " FontSize="14" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3,2,5,3"/>
+                        <Border BorderBrush="Black" BorderThickness="3" Margin="0,2,2,2" CornerRadius="3">
+                            <StackPanel>
+                                <TextBlock Text="Добавить транзакцию: " FontSize="14" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3,2,5,3"/>
 
-                        <TextBlock Text="название: " FontSize="14" Margin="3"/>
-                        <TextBox x:Name="b_name_tb" Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
+                                <TextBlock Text="Сумма:" FontSize="14" Margin="3"/>
+                                <TextBox x:Name="t_sum_tb" Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"></TextBox>
 
-                        <TextBlock Text="выделенный бюджет: " FontSize="14" Margin="3"/>
-                        <TextBox x:Name="amountB_txtb"  Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
+                                <TextBlock Text="Бюджет:" FontSize="14" Margin="3"/>
+                                <ComboBox x:Name="b_picker_cmbbx" Background="Gray" BorderBrush="Black" BorderThickness="2" ItemsSource="{Binding Budgets}" Margin="2">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding name}"></TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
 
-                        <Button x:Name="add_b_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1" Click="add_b_btn_Click"/>
+                                <TextBlock Text="Категория:" FontSize="14" Margin="3"></TextBlock>
+                                <ComboBox x:Name="t_cat_cmbbx"></ComboBox>
+
+                                <TextBlock Text="Дата:" FontSize="14" Margin="3"/>
+                                <DatePicker x:Name="t_date_picker" Background="Gray" BorderBrush="Black" BorderThickness="2" Margin="2"/>
+                                <CheckBox x:Name="t_check_date_now" Content="Сейчас" FontSize="14" Background="Gray" BorderBrush="Black" BorderThickness="2"/>
+
+                                <TextBlock Text="Описание:" FontSize="14" Margin="3"/>
+                                <TextBox x:Name="t_info_tb" FontSize="14" Margin="3"></TextBox>
+
+
+                                <Button x:Name="add_t_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1" Click="add_t_btn_Click"/>
+                            </StackPanel>
+                        </Border>
+                        <!-- бюджет -->
+                        <Border BorderBrush="Black" BorderThickness="3" Margin="0,2,2,2" CornerRadius="3">
+                            <StackPanel>
+                                <TextBlock Text="Добавить бюджет: " FontSize="14" TextWrapping="WrapWithOverflow" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="3,2,5,3"/>
+
+                                <TextBlock Text="Название: " FontSize="14" Margin="3"/>
+                                <TextBox x:Name="b_name_tb" Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
+
+                                <TextBlock Text="Выделенный бюджет: " FontSize="14" Margin="3"/>
+                                <TextBox x:Name="amountB_txtb"  Background="LightGray"  BorderBrush="Black" FontSize="14" Margin="1"/>
+
+                                <Button x:Name="add_b_btn" Content="добавить" FontSize="13" Background="LightGray" BorderBrush="Black" BorderThickness="2" Margin="1" Click="add_b_btn_Click"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-            </StackPanel>
-        <!-- </Border>-->
+                </TabItem>
+
+            </TabControl>
+        </Border>
+        <!--создание отчета и справка-->
+        <ToolBar Grid.Row="0" Grid.ColumnSpan="2" Background="#FF707070">
+            <Border BorderBrush="Black" BorderThickness="3" Margin="3" CornerRadius="3">
+                <Button x:Name="create_report" Content="создать отчет" FontSize="14" Click="create_report_Click" Background="#FF707070"></Button>
+            </Border>
+            <Border BorderBrush="Black" BorderThickness="3" Margin="3" CornerRadius="3">
+                <Button x:Name="info_button" Content="справка" FontSize="14" Click="info_button_Click" Background="#FF707070"></Button>
+            </Border>
+        </ToolBar>
+
+
     </Grid>
 </Window>

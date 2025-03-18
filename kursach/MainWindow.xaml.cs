@@ -1,7 +1,9 @@
 ﻿//sqlite как бд
 using Microsoft.Data.Sqlite;
+
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.IO;
 namespace kursach;
 
 /// <summary>
@@ -12,7 +14,7 @@ public partial class MainWindow : Window
     const string CONNECTION_STRING = "data source=user_data.db";
     public ObservableCollection<Budget> Budgets { get; set; } = new ObservableCollection<Budget>();
 
-   
+
 
     public enum Category
     {
@@ -122,10 +124,12 @@ public partial class MainWindow : Window
         }
     }
     //метод для добавления бюджета
-    void AddBudget(string name, double sum) {
+    void AddBudget(string name, double sum)
+    {
         string query = @"INSERT INTO budgets (name, sum, budgetAmount) VALUES (@name, @sum, @budgetAmount) RETURNING b_id";
         int b_id;
-        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING)) {
+        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
+        {
             connection.Open();
             try
             {
@@ -136,7 +140,9 @@ public partial class MainWindow : Window
                     command.Parameters.AddWithValue("@budgetAmount", sum);
                     b_id = Convert.ToInt32(command.ExecuteScalar());
                 }
-                Budgets.Add(new Budget(b_id, name, sum, sum));
+                var b = new Budget(b_id, name, sum, sum);
+                b.AddTransaction(sum, DateTime.Now, Category.Others, "CREATE");
+                Budgets.Add(b);
             }
             catch (Exception ex) { MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK); }
         }
@@ -184,12 +190,17 @@ public partial class MainWindow : Window
         private void update_sum()
         {//обновление суммы на балансе
             this.sum = .0;
-            foreach (var tr in this.transactions)
+            if (this.name == "main")
             {
-                this.sum += tr.sum;
+                foreach (var t in transactions)
+                {
+                    if (t.info != "CREATE") { this.sum += t.sum; }
+
+                }
             }
+            else { foreach (var t in transactions) {  this.sum += t.sum; } } 
         }
-        private void GetTransactions()
+        public void GetTransactions()
         {//чтение транзакций из бд
             string query;
             if (this.name == "main") { query = "SELECT id, b_id, sum, info, date, cat FROM transactions"; } // если название main то читаем все, main будет хранить всё
@@ -237,7 +248,7 @@ public partial class MainWindow : Window
                         command.Parameters.AddWithValue("@cat", (int)cat);
                         command.Parameters.AddWithValue("@info", info);
 
-                        int id = Convert.ToInt32( command.ExecuteScalar());
+                        int id = Convert.ToInt32(command.ExecuteScalar());
 
                         transactions.Add(new Transaction(id, b_id, sum, info, date, cat));
                     }
@@ -248,9 +259,10 @@ public partial class MainWindow : Window
                     MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
                 }
             }
-            
+
         }
     }
+
 
 
 
@@ -261,13 +273,20 @@ public partial class MainWindow : Window
 
     private void transactions_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {// обновление информации о выбранной транзакции
-        transaction_info_tb.Text =
-            $"сумма: {((Transaction)transactions_lb.SelectedItem).sum}\n" +
-            $"бюджет: {((Budget)budgets_lb.SelectedItem).name} \n" +
-            $"категория: {((Transaction)transactions_lb.SelectedItem).cat.ToString()}\n" +
-            $"дата: {((Transaction)transactions_lb.SelectedItem).date}\n" +
-            $"описание: {((Transaction)transactions_lb.SelectedItem).info} \n";
 
+        try
+        {
+            if (transactions_lb.SelectedItem != null)
+            {
+                transaction_info_tb.Text =
+                    $"сумма: {((Transaction)transactions_lb.SelectedItem).sum}\n" +
+                    $"бюджет: {((Budget)budgets_lb.SelectedItem).name} \n" +
+                    $"категория: {((Transaction)transactions_lb.SelectedItem).cat.ToString()}\n" +
+                    $"дата: {((Transaction)transactions_lb.SelectedItem).date}\n" +
+                    $"описание: {((Transaction)transactions_lb.SelectedItem).info} \n";
+            }
+        }
+        catch (Exception ex) { transaction_info_tb.Text = "==="; }
     }
 
     private void add_t_btn_Click(object sender, RoutedEventArgs e)
@@ -282,15 +301,18 @@ public partial class MainWindow : Window
                 date = DateTime.Parse(t_date_picker.Text);
             }
             string? info = t_info_tb.Text;
-
+            if (((Budget)b_picker_cmbbx.SelectedItem).sum < sum) { MessageBox.Show("Недостаточно средств, баланс стал отрицательным", "", MessageBoxButton.OK, MessageBoxImage.Warning); }
             ((Budget)b_picker_cmbbx.SelectedItem).AddTransaction(sum, date, cat, info);
+            get_main_budget(Budgets).transactions.Clear();
+            get_main_budget(Budgets).GetTransactions();
             t_sum_tb.Text = "";
             b_picker_cmbbx.SelectedIndex = -1;
-            t_cat_cmbbx.SelectedIndex = -1; 
-            t_check_date_now.IsChecked = false; 
-            t_date_picker.Text = ""; 
+            t_cat_cmbbx.SelectedIndex = -1;
+            t_check_date_now.IsChecked = false;
+            t_date_picker.Text = "";
             t_info_tb.Text = "";
             show_budgets_info();
+
         }
         catch (Exception ex)
         {
@@ -304,21 +326,27 @@ public partial class MainWindow : Window
         {
             if (b_name_tb.Text != "" && amountB_txtb.Text != "" && double.Parse(amountB_txtb.Text) >= 0)
             {
+
+
                 string name = b_name_tb.Text;
                 double amountBudget = double.Parse(amountB_txtb.Text);
 
-
-                AddBudget(name, amountBudget);
-
+                if (get_main_budget(Budgets).sum < amountBudget)
+                {
+                    MessageBox.Show("сумма не может быть больше общего баланса", "", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else { AddBudget(name, amountBudget); }
                 b_name_tb.Text = "";
                 amountB_txtb.Text = "";
+            }
+            else
+            {
+                MessageBox.Show("Некорректный ввод", "", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
         }
         catch (Exception ex) { MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK); }
     }
-
-
 
     void show_budgets_info()
     {
@@ -327,28 +355,78 @@ public partial class MainWindow : Window
             // вставка нужной информации о выбранном бюджете
             if (budgets_lb.SelectedItem != null)
             {
-                if (((Budget)budgets_lb.SelectedItem).name == "main")
+                var selectedBudget = (Budget)budgets_lb.SelectedItem;
+
+                if (selectedBudget.name == "main")
                 {
-                    budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}";
+                    budget_info_tb.Text = $"баланс: {selectedBudget.sum}";
                 }
                 else
                 {
-                    budget_info_tb.Text = $"баланс: {((Budget)budgets_lb.SelectedItem).sum}\nвыделенный бюджет: {((Budget)budgets_lb.SelectedItem).budgetAmount}";
+                    budget_info_tb.Text = $"баланс: {selectedBudget.sum}\nвыделенный бюджет: {selectedBudget.budgetAmount}";
                 }
-                //очишение списка транзакций и вставка вместо него нужного
-                if (((Budget)budgets_lb.SelectedItem).transactions.Count() > 0)
+
+                // Очистка списка транзакций и вставка нужного
+                if (selectedBudget.transactions.Count > 0)
                 {
-                    transactions_lb.ItemsSource = ((Budget)budgets_lb.SelectedItem).transactions;
+                    // Убедитесь, что Items пуст перед присвоением ItemsSource
+                    if (transactions_lb.ItemsSource == null) { transactions_lb.Items.Clear(); }
+                    transactions_lb.ItemsSource = selectedBudget.transactions;
                 }
-                else { transactions_lb.Items.Add("нет транзакций"); }
+                else
+                {
+                    // Если транзакций нет, используйте ItemsSource для отображения сообщения
+                    transactions_lb.ItemsSource = null; // Сначала очищаем ItemsSource
+                    transactions_lb.Items.Add("нет транзакций");
+                }
             }
         }
         catch (Exception ex)
         {
             MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
         }
-        
+
     }
 
 
+    public Budget get_main_budget(ObservableCollection<Budget> arr)
+    {
+        return arr.First(b => b.name == "main");
+    }
+
+
+
+
+
+    void CreateReport() 
+    {
+        try
+        {
+            using (StreamWriter sw = new StreamWriter($"{DateTime.Now.ToString("dd/MM/yyyy")}_report.txt"))
+            {
+                foreach (var b in Budgets) 
+                {
+                    sw.WriteLine($"{b.name}:    ");
+                    foreach (var t in b.transactions) 
+                    {
+                        sw.WriteLine($"{t.sum}  {t.cat.ToString()}  {t.date}    {t.info}");
+                    }
+                    sw.WriteLine("\n");
+                }
+            }
+            MessageBox.Show($"Отчет создан!", "", MessageBoxButton.OK);
+        }
+        catch (Exception ex) { MessageBox.Show($"{ex}", "", MessageBoxButton.OK, MessageBoxImage.Warning); }    
+    }
+    void show_info() { MessageBox.Show("Для того чтобы добавить расходы, нужно писать сумму с минусом: \"-100\"", "", MessageBoxButton.OK, MessageBoxImage.Question); }
+
+    private void create_report_Click(object sender, RoutedEventArgs e)
+    {
+        CreateReport();
+    }
+
+    private void info_button_Click(object sender, RoutedEventArgs e)
+    {
+        show_info();
+    }
 }
