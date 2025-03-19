@@ -3,16 +3,20 @@ using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using static kursach.MainWindow;
+using static kursach.Transaction;
 namespace kursach;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
+
 public partial class MainWindow : Window
 {
-    const string CONNECTION_STRING = "data source=user_data.db";
+    
     public ObservableCollection<Budget> Budgets { get; set; } = new ObservableCollection<Budget>();
 
+    public const string CONNECTION_STRING = "data source=user_data.db";
 
 
     public enum Category
@@ -61,7 +65,7 @@ public partial class MainWindow : Window
         ";
         string query2 = @"
         CREATE TABLE IF NOT EXISTS budgets(
-        b_id INT PRIMARY KEY AUTOINCREMENT, 
+        b_id INTEGER PRIMARY KEY AUTOINCREMENT, 
         name TEXT,
         sum REAL,
         budgetAmount REAL
@@ -194,124 +198,6 @@ public partial class MainWindow : Window
         }
 
     }
-
-    public class Transaction
-    {
-        //класс "транзакция", отражает изменение баланса
-        public int id { get; set; } //id для бд
-        public int b_id { get; set; } // для принадлежности к бюджету
-        public double sum { get; set; } // сумма, которая добавилась/убавилась 
-        public string? info { get; set; } // описание
-        public DateTime date { get; set; } // дата
-        public Category cat { get; set; } // категория трат
-        public Transaction(int id, int b_id, double sum, string? info, DateTime date, Category cat)
-        {
-            this.id = id;
-            this.b_id = b_id;
-            this.sum = sum;
-            this.info = info;
-            this.date = date;
-            this.cat = cat;
-        }
-    }
-    public class Budget
-    {
-        public int b_id { get; set; } // id для бд
-        public string name { get; set; } // имя бюджета
-        public double sum { get; set; } // текущее кол-во денег
-        public double budgetAmount { get; set; } // максимально сколько можно потратить, думаю просто выделять с основного баланса некоторое кол-во денег и просто чтобы был виден остаток и сколько было выделено
-        public ObservableCollection<Transaction> transactions; // список транзакций принадлежащих к нему
-
-        public Budget(int b_id, string name, double sum, double budgetAmount)
-        {
-            this.name = name;
-            this.sum = sum;
-            this.budgetAmount = budgetAmount;
-            this.transactions = new ObservableCollection<Transaction>();
-            this.b_id = b_id;
-
-            this.GetTransactions();
-        }
-        private void update_sum()
-        {//обновление суммы на балансе
-            this.sum = .0;
-            if (this.name == "main")
-            {
-                foreach (var t in transactions)
-                {
-                    if (t.info != "CREATE") { this.sum += t.sum; }
-
-                }
-            }
-            else { foreach (var t in transactions) { this.sum += t.sum; } }
-        }
-        public void GetTransactions()
-        {//чтение транзакций из бд
-            transactions.Clear();
-            string query;
-            if (this.name == "main") { query = "SELECT id, b_id, sum, info, date, cat FROM transactions"; } // если название main то читаем все, main будет хранить всё
-            else { query = "SELECT id, b_id, sum, info, date, cat FROM transactions WHERE b_id = @b_id"; }
-
-            using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
-            {
-                connection.Open();
-                using (SqliteCommand command = new SqliteCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@b_id", this.b_id);
-                    using (SqliteDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int id = reader.GetInt32(0);
-                            int b_id = reader.GetInt32(1);
-                            double sum = reader.GetDouble(2);
-                            string? info = reader.IsDBNull(3) ? null : reader.GetString(3);
-                            DateTime date = reader.GetDateTime(4);
-                            Category cat = (Category)reader.GetInt32(5);
-
-                            transactions.Add(new Transaction(id, b_id, sum, info, date, cat)); //заполнение бюджета транзакциями
-                        }
-                    }
-                }
-            }
-            this.update_sum();
-        }
-        public void AddTransaction(double sum, DateTime date, Category cat, string? info = null)
-        {// добавление транзакции в список внутри объекта и в бд
-            string query = "INSERT INTO transactions (b_id, sum, date, cat, info) VALUES (@b_id, @sum, @date, @cat, @info) RETURNING id";
-
-            using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
-            {
-                connection.Open();
-
-                try
-                {
-                    using (SqliteCommand command = new SqliteCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@b_id", this.b_id);
-                        command.Parameters.AddWithValue("@sum", sum);
-                        command.Parameters.AddWithValue("@date", date);
-                        command.Parameters.AddWithValue("@cat", (int)cat);
-                        command.Parameters.AddWithValue("@info", info);
-
-                        int id = Convert.ToInt32(command.ExecuteScalar());
-
-                        transactions.Add(new Transaction(id, b_id, sum, info, date, cat));
-                    }
-                    this.update_sum();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
-                }
-            }
-
-        }
-    }
-
-
-
-
     private void budgets_lb_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         show_budgets_info(); //метод выводящий информацию о выбранном бюджете
@@ -516,5 +402,119 @@ public partial class MainWindow : Window
     public Budget get_main_budget(ObservableCollection<Budget> arr)
     {
         return arr.First(b => b.name == "main");//возвращает основной бюджет
+    }
+}
+
+public class Transaction
+{
+    //класс "транзакция", отражает изменение баланса
+    public int id { get; set; } //id для бд
+    public int b_id { get; set; } // для принадлежности к бюджету
+    public double sum { get; set; } // сумма, которая добавилась/убавилась 
+    public string? info { get; set; } // описание
+    public DateTime date { get; set; } // дата
+    public Category cat { get; set; } // категория трат
+    public Transaction(int id, int b_id, double sum, string? info, DateTime date, Category cat)
+    {
+        this.id = id;
+        this.b_id = b_id;
+        this.sum = sum;
+        this.info = info;
+        this.date = date;
+        this.cat = cat;
+    }
+}
+public class Budget
+{
+    public int b_id { get; set; } // id для бд
+    public string name { get; set; } // имя бюджета
+    public double sum { get; set; } // текущее кол-во денег
+    public double budgetAmount { get; set; } // максимально сколько можно потратить, думаю просто выделять с основного баланса некоторое кол-во денег и просто чтобы был виден остаток и сколько было выделено
+    public ObservableCollection<Transaction> transactions; // список транзакций принадлежащих к нему
+
+    public Budget(int b_id, string name, double sum, double budgetAmount)
+    {
+        this.name = name;
+        this.sum = sum;
+        this.budgetAmount = budgetAmount;
+        this.transactions = new ObservableCollection<Transaction>();
+        this.b_id = b_id;
+
+        this.GetTransactions();
+    }
+    private void update_sum()
+    {//обновление суммы на балансе
+        this.sum = .0;
+        if (this.name == "main")
+        {
+            foreach (var t in transactions)
+            {
+                if (t.info != "CREATE") { this.sum += t.sum; }
+
+            }
+        }
+        else { foreach (var t in transactions) { this.sum += t.sum; } }
+    }
+    public void GetTransactions()
+    {//чтение транзакций из бд
+        transactions.Clear();
+        string query;
+        if (this.name == "main") { query = "SELECT id, b_id, sum, info, date, cat FROM transactions"; } // если название main то читаем все, main будет хранить всё
+        else { query = "SELECT id, b_id, sum, info, date, cat FROM transactions WHERE b_id = @b_id"; }
+
+        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
+        {
+            connection.Open();
+            using (SqliteCommand command = new SqliteCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@b_id", this.b_id);
+                using (SqliteDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int id = reader.GetInt32(0);
+                        int b_id = reader.GetInt32(1);
+                        double sum = reader.GetDouble(2);
+                        string? info = reader.IsDBNull(3) ? null : reader.GetString(3);
+                        DateTime date = reader.GetDateTime(4);
+                        Category cat = (Category)reader.GetInt32(5);
+
+                        transactions.Add(new Transaction(id, b_id, sum, info, date, cat)); //заполнение бюджета транзакциями
+                    }
+                }
+            }
+        }
+        this.update_sum();
+    }
+    public void AddTransaction(double sum, DateTime date, Category cat, string? info = null)
+    {// добавление транзакции в список внутри объекта и в бд
+        string query = "INSERT INTO transactions (b_id, sum, date, cat, info) VALUES (@b_id, @sum, @date, @cat, @info) RETURNING id";
+
+        using (SqliteConnection connection = new SqliteConnection(CONNECTION_STRING))
+        {
+            connection.Open();
+
+            try
+            {
+                using (SqliteCommand command = new SqliteCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@b_id", this.b_id);
+                    command.Parameters.AddWithValue("@sum", sum);
+                    command.Parameters.AddWithValue("@date", date);
+                    command.Parameters.AddWithValue("@cat", (int)cat);
+                    command.Parameters.AddWithValue("@info", info);
+
+                    int id = Convert.ToInt32(command.ExecuteScalar());
+
+                    transactions.Add(new Transaction(id, b_id, sum, info, date, cat));
+                }
+                this.update_sum();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"{ex.Message}", "", MessageBoxButton.OK);
+            }
+        }
+
     }
 }
